@@ -1,9 +1,11 @@
 import os
+import json
 from PyQt5.QtWidgets import (
     QWidget,
     QTableWidgetItem,
     QFileDialog,
-    QHeaderView
+    QHeaderView,
+    QMessageBox,
 )
 from PyQt5.QtCore import QThread, pyqtSignal
 from data_shuttle import ui_setup, utils
@@ -223,6 +225,91 @@ class DataShuttleApp(QWidget):
                 self.log_to_console(f"[내보내기] 총 {grand_total}건 내보내기 완료.")
         except Exception as e:
             self.log_to_console(f"CSV 내보내기 오류: {e}")
+    
+    def save_preset(self) -> None:
+        """상단 '설정 내보내기': connection_1/2 + Origin/Dest + WHERE를 .txt(JSON)로 저장"""
+        try:
+            origin_schema = self.schema_input.text().strip()
+            origin_tables = self.table_input.text().strip()
+            if hasattr(self.where_input, "toPlainText"):
+                origin_where = self.where_input.toPlainText().strip()
+            else:
+                origin_where = self.where_input.text().strip()
+
+            dest_schema = self.dest_schema_input.text().strip() if hasattr(self, "dest_schema_input") else ""
+            dest_tables = self.dest_table_input.text().strip() if hasattr(self, "dest_table_input") else ""
+
+            data = {
+                "version": 1,
+                "settings": self.settings,
+                "origin": {
+                    "schema": origin_schema,
+                    "tables": origin_tables,
+                    "where": origin_where,
+                },
+                "destination": {
+                    "schema": dest_schema,
+                    "tables": dest_tables,
+                },
+            }
+
+            default_name = "data_shuttle_preset.txt"
+            file_name, _ = QFileDialog.getSaveFileName(
+                self,
+                "설정 내보내기",
+                default_name,
+                "Text/JSON Files (*.txt *.json);;All Files (*)",
+            )
+            if not file_name:
+                return
+            
+            with open(file_name, "w", encoding="utf-8-sig") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+
+            self.log_to_console(f"[내보내기] 설정을 저장했습니다: {file_name}")
+        except Exception as e:
+            self.log_to_console(f"설정 내보내기 오류: {e}")
+            QMessageBox.warning(self, "설정 내보내기", f"오류가 발생했습니다.\n{e}")
+
+    def load_preset(self) -> None:
+        """상단 '설정 불러오기': 파일에서 읽어 UI/내부 상태에 반영"""
+        try:
+            file_name, _ = QFileDialog.getOpenFileName(
+                self,
+                "설정 불러오기",
+                "",
+                "Text/JSON Files (*.txt *.json);;All Files (*)",
+            )
+            if not file_name:
+                return
+            
+            with open(file_name, "r", encoding="utf-8-sig") as f:
+                data = json.load(f)
+
+            if "settings" in data and isinstance(data["settings"], dict):
+                self.settings = data["settings"]
+            else:
+                QMessageBox.warning(self, "설정 불러오기", "settings 객체가 없어 연결 정보는 갱신하지 않았습니다.")
+
+            origin = data.get("origin", {})
+            dest   = data.get("destination", {})
+
+            if "schema" in origin: self.schema_input.setText(origin.get("schema", ""))
+            if "tables" in origin: self.table_input.setText(origin.get("tables", ""))
+            if hasattr(self.where_input, "setPlainText"):
+                self.where_input.setPlainText(origin.get("where", ""))
+            else:
+                self.where_input.setText(origin.get("where", ""))
+
+            if hasattr(self, "dest_schema_input") and "schema" in dest:
+                self.dest_schema_input.setText(dest.get("schema", ""))
+            if hasattr(self, "dest_table_input") and "tables" in dest:
+                self.dest_table_input.setText(dest.get("tables", ""))
+                
+            self.log_to_console(f"[불러오기] 설정을 적용했습니다: {file_name}")
+        except Exception as e:
+            self.log_to_console(f"설정 불러오기 오류: {e}")
+            QMessageBox.warning(self, "설정 불러오기", f"오류가 발생했습니다.\n{e}")
     # ─────────────────────────────────
 
     # ─────────────────────────────────

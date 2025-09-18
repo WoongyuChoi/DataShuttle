@@ -17,9 +17,20 @@ from PyQt5.QtCore import Qt
 def init_ui(app_instance):
     layout = QVBoxLayout()
 
-    # 상단 바: [↺ 초기화] [⚙ 설정]
+    # ─────────────────────────────────
     topbar = QHBoxLayout()
-    topbar.addStretch(1)
+
+    app_instance.preset_load_btn = QToolButton()
+    app_instance.preset_load_btn.setText("설정 불러오기")
+    app_instance.preset_load_btn.clicked.connect(app_instance.load_preset)
+    topbar.addWidget(app_instance.preset_load_btn)
+
+    app_instance.preset_save_btn = QToolButton()
+    app_instance.preset_save_btn.setText("설정 내보내기")
+    app_instance.preset_save_btn.clicked.connect(app_instance.save_preset)
+    topbar.addWidget(app_instance.preset_save_btn)
+
+    topbar.addStretch(1) # 가운데 여백
 
     app_instance.top_reset_btn = QToolButton()
     app_instance.top_reset_btn.setText("↺ 초기화")
@@ -32,6 +43,7 @@ def init_ui(app_instance):
     topbar.addWidget(app_instance.settings_btn)
 
     layout.addLayout(topbar)
+    # ─────────────────────────────────
 
     # ─────────────────────────────────
     header_col = QGridLayout()
@@ -40,7 +52,7 @@ def init_ui(app_instance):
     origin_box = QGroupBox("Origin")
     ov = QVBoxLayout()
     app_instance.schema_input = QLineEdit()
-    app_instance.schema_input.setPlaceholderText("예: PRD_PUBLIC …")
+    app_instance.schema_input.setPlaceholderText("예: PUBLIC …")
     app_instance.table_input = QLineEdit()
     app_instance.table_input.setPlaceholderText("예: JOB_TABLE …")
     ov.addWidget(QLabel("SCHEMA"))
@@ -54,7 +66,7 @@ def init_ui(app_instance):
     dest_box = QGroupBox("Destination")
     dv = QVBoxLayout()
     app_instance.dest_schema_input = QLineEdit()
-    app_instance.dest_schema_input.setPlaceholderText("예: DEV_PUBLIC … (미입력 시 Origin과 동일)")
+    app_instance.dest_schema_input.setPlaceholderText("예: PUBLIC_DST … (미입력 시 Origin과 동일)")
     app_instance.dest_table_input = QLineEdit()
     app_instance.dest_table_input.setPlaceholderText("예: JOB_TABLE_DST … (미입력 시 Origin과 동일)")
     dv.addWidget(QLabel("SCHEMA"))
