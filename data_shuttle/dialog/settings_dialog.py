@@ -52,7 +52,7 @@ class SettingsDialog(QDialog):
         bottom_bar.addWidget(self.buttons)
 
         root.addLayout(bottom_bar)
-        
+
         self._load_values("connection_1")
         self._load_values("connection_2")
 
@@ -161,6 +161,24 @@ class SettingsDialog(QDialog):
             svc_label.setText("SERVICE_NAME/SID")
             svc_edit.setPlaceholderText("예: ORCL / PROD (SERVICE_NAME 또는 SID)")
             getattr(self, f"{env_key}_port").setPlaceholderText("예: 1521")
+        
+        self._set_default_port(env_key, dbt)
+
+    def _set_default_port(self, env_key: str, db_type_text: str):
+        """포트 입력칸이 비어있거나 기존 기본값이면, DB 타입에 맞는 기본 포트로 설정."""
+        port_edit = getattr(self, f"{env_key}_port")
+        cur = (port_edit.text() or "").strip()
+
+        defaults = {
+            "oracle": "1521",
+            "postgresql": "5432",
+        }
+        new_db = (db_type_text or "").lower()
+        new_default = defaults.get(new_db)
+        if not new_default:
+            return
+        if (not cur) or (cur in defaults.values()):
+            port_edit.setText(new_default)
 
     def values(self) -> dict:
         return {
