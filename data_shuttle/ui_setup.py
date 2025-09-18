@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (
     QToolButton,
     QLineEdit,
 )
+from PyQt5.QtCore import Qt
 
 
 def init_ui(app_instance):
@@ -110,6 +111,10 @@ def init_ui(app_instance):
     layout.addWidget(QLabel("Result:"))
     layout.addWidget(app_instance.result_table)
     # ─────────────────────────────────
+
+    app_instance.export_origin_btn = QPushButton("CSV Export (Origin)")
+    app_instance.export_origin_btn.clicked.connect(app_instance.export_origin_csv)
+    layout.addWidget(app_instance.export_origin_btn, alignment=Qt.AlignRight)
 
     app_instance.setLayout(layout)
     app_instance.setWindowTitle("DataShuttle")

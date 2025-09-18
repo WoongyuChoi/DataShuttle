@@ -1,3 +1,4 @@
+import csv
 from typing import Dict, Tuple, Generator, Iterable
 from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.engine import Engine, Row
@@ -138,3 +139,48 @@ def run_migration_stream(
                         yield {"type": "progress", "inserted_delta": 1}
                     except Exception as e2:
                         yield {"type": "error", "row_index": row_index - len(payload) + idx, "error": str(e2)}
+
+def export_origin_to_csv(
+    engine: Engine,
+    schema: str,
+    table: str,
+    where_text: str,
+    file_path: str,
+    chunk_size: int = 10_000,
+    encoding: str = "utf-8-sig",
+    newline_opt: str = "",
+) -> int:
+    """
+    Origin(소스)에서 where 조건으로 조회한 결과를 CSV로 스트리밍 내보냅니다.
+    - 헤더는 컬럼명 소문자 기준으로 1회 작성
+    - 반환: 내보낸 총 행 수
+    """
+    cols = _get_columns(engine, schema, table)
+    if not cols:
+        return 0
+
+    where_sql = f" WHERE {where_text} " if where_text.strip() else ""
+    src_dialect = (engine.dialect.name or "").lower()
+    if src_dialect == "oracle":
+        select_cols = ", ".join(f'{c.upper()} AS "{c}"' for c in cols)
+    else:
+        select_cols = ", ".join(f'"{c}" AS "{c}"' for c in cols)
+
+    select_sql = text(f"SELECT {select_cols} FROM {schema}.{table}{where_sql}")
+
+    out_count = 0
+    with engine.connect() as conn, open(file_path, "w", newline=newline_opt, encoding=encoding) as f:
+        writer = csv.writer(f)
+        writer.writerow(cols)
+
+        result = conn.execution_options(stream_results=True).execute(select_sql)
+        while True:
+            rows = result.fetchmany(chunk_size)
+            if not rows:
+                break
+            for r in rows:
+                m = r._mapping
+                writer.writerow([m.get(c) for c in cols])
+                out_count += 1
+
+    return out_count

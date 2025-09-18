@@ -1,3 +1,4 @@
+import os
 from PyQt5.QtWidgets import QWidget, QTableWidgetItem, QFileDialog
 from PyQt5.QtCore import QThread, pyqtSignal
 from data_shuttle import ui_setup, utils
@@ -77,6 +78,7 @@ class DataShuttleApp(QWidget):
                 "connection_2": {"db_type":"PostgreSQL","protocol":"TCP","host":"127.0.0.1","port":5432,"service_or_db":"","user":"","password":""},
             }
         self._worker = None
+        self._last_origin = None
 
     # ─────────────────────────────────
     def log_to_console(self, message: str) -> None:
@@ -141,6 +143,13 @@ class DataShuttleApp(QWidget):
             # (Worker에서 비어있으면 소스 테이블 동일명으로 처리)
             dst_tables = dst_table  # 그대로 전달 (워커에서 매핑)
 
+            # 마지막 Origin 조건 저장
+            self._last_origin = {
+                "schema": src_schema,
+                "tables": [t.strip() for t in src_tables.split(",") if t.strip()],
+                "where": where,
+            }
+
             self.log_to_console(
                 f"[실행] Origin=({src_schema}, {src_tables}), "
                 f"Destination=({dst_schema}, {dst_tables or '(동일명)'}), WHERE={where or '(없음)'}"
@@ -158,8 +167,54 @@ class DataShuttleApp(QWidget):
             self._worker.start()
         except Exception as e:
             self.log_to_console(f"마이그레이션 오류: {str(e)}")
-    # ─────────────────────────────────
 
+    def export_origin_csv(self) -> None:
+        try:
+            if not self._last_origin or not self._last_origin.get("tables"):
+                self.log_to_console("조회된 데이터가 없습니다. 먼저 마이그레이션(조회)을 실행해 주세요.")
+                return
+
+            src_cfg = self.settings.get("connection_1", {})
+            engine = utils.create_engine_from_config(src_cfg)
+
+            schema = self._last_origin["schema"]
+            tables = self._last_origin["tables"]
+            where  = self._last_origin.get("where", "")
+
+            # 빠른 안내: 총건수 0이면 파일 저장 다이얼로그 전에 메시지
+            total_cnt = 0
+            for t in tables:
+                total_cnt += utils.count_rows(engine, schema, t, where)
+            if total_cnt == 0:
+                self.log_to_console("Origin 조회 결과가 없습니다. (총 0건)")
+                return
+
+            if len(tables) == 1:
+                t = tables[0]
+                default_name = f"{t}.csv"
+                file_name, _ = QFileDialog.getSaveFileName(
+                    self, "CSV Export (Origin)", default_name, "CSV Files (*.csv);;All Files (*)"
+                )
+                if not file_name:
+                    return
+                n = utils.export_origin_to_csv(engine, schema, t, where, file_name, chunk_size=10_000)
+                self.log_to_console(f"[내보내기] {t}: {n}건을 CSV로 내보냈습니다 → {file_name}")
+            else:
+                # 다수 테이블: 폴더를 선택해 테이블별 파일 생성
+                dir_path = QFileDialog.getExistingDirectory(self, "Select folder to export CSVs")
+                if not dir_path:
+                    return
+                grand_total = 0
+                for t in tables:
+                    path = os.path.join(dir_path, f"{t}.csv")
+                    n = utils.export_origin_to_csv(engine, schema, t, where, path, chunk_size=10_000)
+                    grand_total += n
+                    self.log_to_console(f"[내보내기] {t}: {n}건 → {path}")
+                self.log_to_console(f"[내보내기] 총 {grand_total}건 내보내기 완료.")
+        except Exception as e:
+            self.log_to_console(f"CSV 내보내기 오류: {e}")
+    # ─────────────────────────────────
+    
     # ─────────────────────────────────
     def _on_progress(self, inserted: int, total: int):
         self._append_result("진행", f"누적 {inserted}/{total}건 마이그레이션 성공")
