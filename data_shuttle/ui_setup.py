@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (
     QGroupBox,
     QToolButton,
     QLineEdit,
+    QHeaderView,
 )
 from PyQt5.QtCore import Qt
 
@@ -108,6 +109,14 @@ def init_ui(app_instance):
     # ─────────────────────────────────
     app_instance.result_table = QTableWidget()
     app_instance.result_table.setMinimumHeight(200)
+    app_instance.result_table.setColumnCount(2)
+    app_instance.result_table.setHorizontalHeaderLabels(["Step", "Detail"])
+
+    h = app_instance.result_table.horizontalHeader()
+    h.setStretchLastSection(True)
+    h.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+    h.setSectionResizeMode(1, QHeaderView.Stretch) 
+
     layout.addWidget(QLabel("Result:"))
     layout.addWidget(app_instance.result_table)
     # ─────────────────────────────────

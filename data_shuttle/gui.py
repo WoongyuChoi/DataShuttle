@@ -1,5 +1,10 @@
 import os
-from PyQt5.QtWidgets import QWidget, QTableWidgetItem, QFileDialog
+from PyQt5.QtWidgets import (
+    QWidget,
+    QTableWidgetItem,
+    QFileDialog,
+    QHeaderView
+)
 from PyQt5.QtCore import QThread, pyqtSignal
 from data_shuttle import ui_setup, utils
 from data_shuttle.dialog.settings_dialog import SettingsDialog
@@ -83,12 +88,17 @@ class DataShuttleApp(QWidget):
     # ─────────────────────────────────
     def log_to_console(self, message: str) -> None:
         ui_setup.log_to_console(self, message)
-    
+
     def _append_result(self, step: str, detail: str) -> None:
         table = self.result_table
         if table.columnCount() == 0:
             table.setColumnCount(2)
             table.setHorizontalHeaderLabels(["Step", "Detail"])
+            h = table.horizontalHeader()
+            h.setStretchLastSection(True)
+            h.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+            h.setSectionResizeMode(1, QHeaderView.Stretch)
+
         r = table.rowCount()
         table.insertRow(r)
         table.setItem(r, 0, QTableWidgetItem(step))
@@ -214,7 +224,7 @@ class DataShuttleApp(QWidget):
         except Exception as e:
             self.log_to_console(f"CSV 내보내기 오류: {e}")
     # ─────────────────────────────────
-    
+
     # ─────────────────────────────────
     def _on_progress(self, inserted: int, total: int):
         self._append_result("진행", f"누적 {inserted}/{total}건 마이그레이션 성공")
