@@ -1,0 +1,6 @@
+PyInstaller
+PyQt5
+SQLAlchemy
+oracledb
+psycopg[binary]
+pandas

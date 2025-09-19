@@ -1,0 +1,32 @@
+﻿{
+  "version": 1,
+  "settings": {
+    "connection_1": {
+      "db_type": "Oracle",
+      "protocol": "TCP",
+      "host": "127.0.0.1",
+      "port": 1521,
+      "service_or_db": "FREEPDB1",
+      "user": "system",
+      "password": "YourStrongPwd1!"
+    },
+    "connection_2": {
+      "db_type": "Oracle",
+      "protocol": "TCP",
+      "host": "127.0.0.1",
+      "port": 1521,
+      "service_or_db": "FREEPDB1",
+      "user": "system",
+      "password": "YourStrongPwd1!"
+    }
+  },
+  "origin": {
+    "schema": "DATASHUTTLE",
+    "tables": "T_MIG_TEST",
+    "where": "ROW_ID >= 1"
+  },
+  "destination": {
+    "schema": "DATASHUTTLE",
+    "tables": "T_MIG_TEST2"
+  }
+}
