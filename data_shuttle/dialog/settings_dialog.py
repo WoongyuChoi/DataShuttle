@@ -21,7 +21,7 @@ from data_shuttle import utils
 class SettingsDialog(QDialog):
     def __init__(self, parent=None, settings: dict = None):
         super().__init__(parent)
-        self.setWindowTitle("설정")
+        self.setWindowTitle("Settings")
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.setModal(True)
         self.resize(560, 360)
