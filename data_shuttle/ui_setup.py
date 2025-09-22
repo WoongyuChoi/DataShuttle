@@ -144,6 +144,10 @@ def init_ui(app_instance):
     adjust_window_size(app_instance)
     center(app_instance)
 
+    # 내부 진단
+    log_to_console(app_instance, check_cryptography())
+    log_to_console(app_instance, check_drivers())
+
 
 def adjust_window_size(app_instance):
     """해상도에 따라 윈도우 크기를 조정하는 함수"""
@@ -181,3 +185,26 @@ def center(app_instance):
 def log_to_console(app_instance, message: str):
     """콘솔 창에 로그 메시지를 출력하는 함수"""
     app_instance.console_output.append(message)
+
+
+def check_cryptography() -> str:
+    try:
+        import cryptography
+        from cryptography.hazmat.bindings import _rust
+        return f"cryptography {cryptography.__version__} (with _rust) OK"
+    except Exception as e:
+        return f"cryptography NG: {type(e).__name__}: {e}"
+
+
+def check_drivers():
+    try:
+        import psycopg
+        msg1 = f"psycopg {psycopg.__version__} OK"
+    except Exception as e:
+        msg1 = f"psycopg NG: {type(e).__name__}: {e}"
+    try:
+        import oracledb
+        msg2 = f"oracledb {oracledb.__version__} OK"
+    except Exception as e:
+        msg2 = f"oracledb NG: {type(e).__name__}: {e}"
+    return f"{msg1} | {msg2}"
