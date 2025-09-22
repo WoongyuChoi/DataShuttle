@@ -86,7 +86,7 @@ data_shuttle/
 
 3. **Build Executable (Windows)**
    ```bash
-   pyinstaller --onefile --windowed --icon favicon.ico --hidden-import sqlalchemy.dialects.oracle --hidden-import sqlalchemy.dialects.postgresql.psycopg main.py
+   pyinstaller --onefile --windowed --icon=favicon.ico --hidden-import=psycopg --hidden-import=psycopg_pool --hidden-import=sqlalchemy.dialects.oracle --hidden-import=sqlalchemy.dialects.postgresql.psycopg --collect-all=psycopg_binary --collect-all=oracledb --collect-all=cryptography main.py
    ```
 
 ## Usage
