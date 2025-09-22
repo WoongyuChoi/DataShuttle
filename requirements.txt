@@ -4,3 +4,4 @@ SQLAlchemy
 oracledb
 psycopg[binary]
 pandas
+cryptography
